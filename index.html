@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#111418">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Epure">
+<title>Epure — Compteurs</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header id="topbar">
+  <button id="btn-back" class="icon-btn" hidden aria-label="Retour">‹</button>
+  <h1 id="title">Epure</h1>
+  <button id="btn-settings" class="icon-btn" aria-label="Réglages">⚙</button>
+</header>
+
+<div id="backup-warning" class="banner" hidden>
+  <span id="backup-warning-text"></span>
+  <button class="link" data-go="reglages">Sauvegarder</button>
+</div>
+
+<main id="app"><!-- screens injected here --></main>
+
+<nav id="tabbar">
+  <button data-go="recap" class="tab active"><span>▦</span>Récap</button>
+  <button id="tab-scan" class="tab"><span>⬚</span>Scanner</button>
+  <button data-go="archives" class="tab"><span>▤</span>Archives</button>
+</nav>
+
+<!-- Scanner QR -->
+<div id="scanner" class="overlay" hidden>
+  <video id="scan-video" playsinline muted></video>
+  <canvas id="scan-canvas" hidden></canvas>
+  <div class="scan-frame"></div>
+  <p id="scan-hint">Vise le QR code vert de la vignette ANM</p>
+  <button id="scan-close" class="btn ghost">Annuler</button>
+</div>
+
+<!-- Toast -->
+<div id="toast" hidden></div>
+
+<script src="vendor/jsqr.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

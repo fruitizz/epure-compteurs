@@ -90,10 +90,25 @@ async function setReglage(k, v) {
    sombre forcé. Le choix vit dans localStorage et non dans IndexedDB : c'est
    une préférence d'affichage propre à l'appareil, pas une donnée comptable —
    elle n'a donc rien à faire dans la sauvegarde. */
+const svg = (contenu) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${contenu}</svg>`;
+
 const THEMES = [
-  { cle: 'auto', icone: '◐', libelle: 'Thème : automatique (suit le téléphone)' },
-  { cle: 'clair', icone: '☀', libelle: 'Thème : clair' },
-  { cle: 'sombre', icone: '☾', libelle: 'Thème : sombre' },
+  {
+    cle: 'auto',
+    libelle: 'Thème : automatique (suit le téléphone)',
+    icone: svg('<circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 0 0 17.2z" fill="currentColor" stroke="none"/>'),
+  },
+  {
+    cle: 'clair',
+    libelle: 'Thème : clair',
+    icone: svg('<circle cx="12" cy="12" r="4.1"/><path d="M12 2.4v2.2M12 19.4v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.4 12h2.2M19.4 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/>'),
+  },
+  {
+    cle: 'sombre',
+    libelle: 'Thème : sombre',
+    icone: svg('<path d="M20.4 14.2A8.6 8.6 0 0 1 9.8 3.6a8.6 8.6 0 1 0 10.6 10.6z"/>'),
+  },
 ];
 
 const lireTheme = () => {
@@ -107,14 +122,19 @@ function appliquerTheme(cle) {
   try { localStorage.setItem('epure-theme', t.cle); } catch {}
 
   const btn = document.querySelector('#btn-theme');
-  if (btn) { btn.textContent = t.icone; btn.setAttribute('aria-label', t.libelle); btn.title = t.libelle; }
+  if (btn) {
+    btn.innerHTML = t.icone;
+    btn.dataset.mode = t.cle;
+    btn.setAttribute('aria-label', t.libelle);
+    btn.title = t.libelle;
+  }
 
   /* La barre d'état du téléphone doit suivre, sinon elle jure avec l'app. */
   const meta = document.querySelector('meta[name=theme-color]');
   if (meta) {
     const clair = t.cle === 'clair'
       || (t.cle === 'auto' && window.matchMedia('(prefers-color-scheme: light)').matches);
-    meta.setAttribute('content', clair ? '#f4f6f8' : '#111418');
+    meta.setAttribute('content', clair ? '#ffffff' : '#000000');
   }
   return t;
 }
@@ -170,18 +190,32 @@ function compressImage(file, maxSide = 1280, quality = 0.72) {
   });
 }
 
+/* Safari refuse de stocker un Blob dans IndexedDB — il jette
+   « Error preparing Blob/File data to be stored in object store », et l'écran
+   d'arrivée restait bloqué sans message. On range donc les octets bruts
+   (ArrayBuffer), que WebKit accepte sans broncher, et on reconstruit le Blob
+   à la lecture. */
 async function savePhoto(blob) {
-  const id = await put('photos', { blob, at: new Date().toISOString() });
-  return id;
+  return put('photos', {
+    buf: await blob.arrayBuffer(),
+    type: blob.type || 'image/jpeg',
+    at: new Date().toISOString(),
+  });
 }
+
+/* Tolère les deux formes : octets bruts, et l'ancien Blob direct pour les
+   installations qui en contiennent déjà. */
+const photoBlob = (row) =>
+  row?.buf ? new Blob([row.buf], { type: row.type || 'image/jpeg' }) : row?.blob || null;
 
 const photoUrls = new Map();
 async function photoUrl(id) {
   if (!id) return null;
   if (photoUrls.has(id)) return photoUrls.get(id);
   const row = await get('photos', id);
-  if (!row) return null;
-  const url = URL.createObjectURL(row.blob);
+  const blob = photoBlob(row);
+  if (!blob) return null;
+  const url = URL.createObjectURL(blob);
   photoUrls.set(id, url);
   return url;
 }
@@ -216,6 +250,13 @@ function go(name, params = {}, { push = true } = {}) {
   if (push && current.name !== name) history_.push(current);
   current = { name, params };
   render();
+}
+
+/* Repart d'un écran racine : la pile est vidée ET l'écran n'y est pas
+   réempilé, sinon la flèche retour ramène sur un formulaire déjà validé. */
+function remplacer(name, params = {}) {
+  history_.length = 0;
+  go(name, params, { push: false });
 }
 
 function back() {
@@ -255,16 +296,17 @@ routes.recap = async () => {
     let body;
     if (s) {
       const n = nuits(s.dateEntree, today());
+      const duree = n === 0 ? 'arrivée aujourd’hui' : `${n} nuit${n > 1 ? 's' : ''}`;
       body = `
-        <div class="room-meta">${esc(s.occupant)} · depuis le ${fmtDate(s.dateEntree)} · ${n} nuit${n > 1 ? 's' : ''}</div>
+        <div class="room-meta">${esc(s.occupant)} · depuis le ${fmtDate(s.dateEntree)} · ${duree}</div>
         <div class="room-stats">
-          <div><div class="stat-label">Index entrée</div><div class="stat-value">${nf1.format(s.indexEntree)} <small style="font-size:13px;font-weight:400;color:var(--muted)">kWh</small></div></div>
+          <div><div class="stat-label">Index entrée</div><div class="stat-value">${nf1.format(s.indexEntree)} <small>kWh</small></div></div>
         </div>`;
     } else {
       body = `
         <div class="room-meta">Vignette ANM ${esc(c.vignette || '—')}</div>
         <div class="room-stats">
-          <div><div class="stat-label">Dernier index</div><div class="stat-value">${nf1.format(idx)} <small style="font-size:13px;font-weight:400;color:var(--muted)">kWh</small></div></div>
+          <div><div class="stat-label">Dernier index</div><div class="stat-value">${nf1.format(idx)} <small>kWh</small></div></div>
         </div>`;
     }
     const card = el(`
@@ -280,7 +322,7 @@ routes.recap = async () => {
   }
 
   const enCours = sejours.filter((s) => s.statut === 'en_cours').length;
-  frag.append(el(`<div class="hint" style="text-align:center;margin-top:18px">
+  frag.append(el(`<div class="hint centre mt-18">
     ${enCours} chambre${enCours > 1 ? 's' : ''} occupée${enCours > 1 ? 's' : ''} sur ${actifs.length}
   </div>`));
   return frag;
@@ -303,9 +345,9 @@ routes.chambre = async ({ id }) => {
           <span class="room-name">${esc(s.occupant)}</span>
           <span class="pill occupee">Occupée</span>
         </div>
-        <div class="lines" style="margin-top:12px">
+        <div class="lines serre">
           <div><span class="k">Entrée</span><span class="v">${fmtDate(s.dateEntree)}</span></div>
-          <div><span class="k">Nuits</span><span class="v">${n}</span></div>
+          <div><span class="k">Nuits à ce jour</span><span class="v">${n}</span></div>
           <div><span class="k">Index d'entrée</span><span class="v">${kwh(s.indexEntree)}</span></div>
           ${s.tel ? `<div><span class="k">Téléphone</span><span class="v">${esc(s.tel)}</span></div>` : ''}
         </div>
@@ -317,7 +359,7 @@ routes.chambre = async ({ id }) => {
     frag.append(el(`
       <div class="card">
         <div class="room-head"><span class="room-name">Chambre libre</span><span class="pill libre">Libre</span></div>
-        <div class="lines" style="margin-top:12px">
+        <div class="lines serre">
           <div><span class="k">Dernier index relevé</span><span class="v">${kwh(idx)}</span></div>
           <div><span class="k">Vignette ANM</span><span class="v">${esc(chambre.vignette || '—')}</span></div>
           <div><span class="k">N° de série</span><span class="v">${esc(chambre.serie || '—')}</span></div>
@@ -347,7 +389,7 @@ function blocReleve({ label, hint }) {
       <div class="field">
         <label>${esc(label)}</label>
         <div class="photo-slot">
-          <span class="ph-placeholder">📷 Photographier le compteur</span>
+          <span class="ph-placeholder">Photographier le compteur</span>
           <img hidden alt="">
           <input type="file" accept="image/*" capture="environment">
         </div>
@@ -412,8 +454,8 @@ routes.arrivee = async ({ chambreId }) => {
       <div class="field"><label>Téléphone (optionnel)</label><input id="a-tel" type="tel" inputmode="tel" placeholder="+229…"></div>
       <div class="field"><label>Date d'entrée</label><input id="a-date" type="date" value="${today()}"></div>
     </div>`);
-  const boucle = el(`<label style="display:flex;gap:10px;align-items:center;font-size:13px;color:var(--muted);margin-top:4px">
-    <input type="checkbox" id="a-boucle" style="width:auto"> Le compteur est repassé à zéro
+  const boucle = el(`<label class="case">
+    <input type="checkbox" id="a-boucle"> Le compteur est repassé à zéro
   </label>`);
 
   const bloc = el('<div class="card"></div>');
@@ -446,8 +488,7 @@ routes.arrivee = async ({ chambreId }) => {
       creeA: new Date().toISOString(),
     });
     toast('Arrivée enregistrée.');
-    history_.length = 0;
-    go('recap');
+    remplacer('recap');
   };
   frag.append(btn);
   return frag;
@@ -542,8 +583,7 @@ routes.depart = async ({ sejourId }) => {
     await put('sejours', sejour);
     if (!reglages.prixKwhDefaut) await setReglage('prixKwhDefaut', prix);
     refreshBackupWarning();
-    history_.length = 0;
-    go('facture', { sejourId: sejour.id });
+    remplacer('facture', { sejourId: sejour.id });
   };
   frag.append(btn);
   recalc();
@@ -557,14 +597,16 @@ async function dessinerFacture(sejour, chambre) {
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
   const g = c.getContext('2d');
-  const ink = '#12181f', grey = '#6b7886', line = '#d7dee5';
+  const ink = '#000000', grey = '#707070', line = '#e2e2e2';
+  /* Chrome 99+ et Safari 17.4+ ; ailleurs on s'en passe sans rien casser. */
+  if ('letterSpacing' in g) g.letterSpacing = '-0.6px';
 
   g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
   const M = 80;
   let y = 110;
 
   g.fillStyle = ink;
-  g.font = '600 46px -apple-system, "Segoe UI", Roboto, sans-serif';
+  g.font = '700 48px -apple-system, "Segoe UI", Roboto, sans-serif';
   g.fillText(reglages.entete || 'Résidence Epure', M, y);
   if (reglages.sousTitre) {
     y += 34;
@@ -577,7 +619,7 @@ async function dessinerFacture(sejour, chambre) {
   g.beginPath(); g.moveTo(M, y); g.lineTo(W - M, y); g.stroke();
 
   y += 56;
-  g.fillStyle = ink; g.font = '600 32px -apple-system, sans-serif';
+  g.fillStyle = ink; g.font = '600 30px -apple-system, sans-serif';
   g.fillText('Facture d’électricité', M, y);
   y += 38;
   g.fillStyle = grey; g.font = '24px -apple-system, sans-serif';
@@ -614,7 +656,7 @@ async function dessinerFacture(sejour, chambre) {
   y += 34;
   g.strokeStyle = ink; g.lineWidth = 3;
   g.beginPath(); g.moveTo(M, y); g.lineTo(W - M, y); g.stroke();
-  ligne('TOTAL À PAYER', money(montant(sejour)), { bold: true, size: 40, gap: 70 });
+  ligne('TOTAL À PAYER', money(montant(sejour)), { bold: true, size: 42, gap: 74 });
 
   if (sejour.note) {
     y += 64;
@@ -654,7 +696,7 @@ routes.facture = async ({ sejourId }) => {
     }
   };
 
-  const enregistrer = el(`<a class="btn ghost" style="display:block;text-align:center;text-decoration:none" href="${url}" download="${nomFichier}">Enregistrer l’image</a>`);
+  const enregistrer = el(`<a class="btn ghost" href="${url}" download="${nomFichier}">Enregistrer l’image</a>`);
   const hint = el('<div class="hint">Sur iPhone : appuie longuement sur la facture ci-dessus puis « Ajouter aux photos ».</div>');
 
   const imprimer = el('<button class="btn ghost">Imprimer</button>');
@@ -666,7 +708,7 @@ routes.facture = async ({ sejourId }) => {
   };
 
   const fini = el('<button class="btn ghost">Terminé</button>');
-  fini.onclick = () => { history_.length = 0; go('recap'); };
+  fini.onclick = () => remplacer('recap');
 
   frag.append(partager, enregistrer, hint, imprimer, fini);
   return frag;
@@ -679,7 +721,7 @@ function archiveCard(s, chambre) {
     <button class="card">
       <div class="arch-item">
         <div>
-          <div class="room-name" style="font-size:15px">${esc(s.occupant)}</div>
+          <div class="room-name">${esc(s.occupant)}</div>
           <div class="arch-sub">${esc(chambre?.nom || '')} · ${fmtDate(s.dateEntree)} → ${fmtDate(s.dateSortie)} · ${nf1.format(conso(s))} kWh</div>
         </div>
         <div class="arch-amount">${money(montant(s))}</div>
@@ -757,17 +799,19 @@ routes.reglages = async () => {
   frag.append(el('<h2>Sauvegarde</h2>'));
   const dern = reglages.dernierBackup;
   frag.append(el(`<div class="card">
-    <div class="hint" style="margin:0 0 12px">
+    <div class="hint mb-12">
       Toutes les données vivent sur ce téléphone uniquement. Sans sauvegarde,
       un téléphone perdu ou réinitialisé emporte toute la comptabilité.
       ${dern ? `Dernière sauvegarde : <b>${new Date(dern).toLocaleString('fr-FR')}</b>.` : '<b>Aucune sauvegarde effectuée.</b>'}
     </div>
   </div>`));
   const bExport = el('<button class="btn">Sauvegarder maintenant</button>');
-  bExport.onclick = exporterSauvegarde;
-  const bImport = el('<label class="btn ghost" style="display:block;text-align:center">Restaurer une sauvegarde<input type="file" accept="application/json" hidden></label>');
+  bExport.onclick = partagerSauvegarde;
+  const bFichier = el('<button class="btn ghost">Télécharger le fichier</button>');
+  bFichier.onclick = telechargerSauvegarde;
+  const bImport = el('<label class="btn ghost">Restaurer une sauvegarde<input type="file" accept="application/json" hidden></label>');
   $('input', bImport).onchange = (e) => importerSauvegarde(e.target.files[0]);
-  frag.append(bExport, bImport);
+  frag.append(bExport, bFichier, bImport);
 
   /* --- facture --- */
   frag.append(el('<h2>Facture</h2>'));
@@ -796,7 +840,7 @@ routes.reglages = async () => {
   for (const c of chambres) {
     const card = el(`<div class="card">
       <div class="field"><label>Nom</label><input value="${esc(c.nom)}" data-nom="${c.id}"></div>
-      <div class="lines" style="margin-top:10px">
+      <div class="lines serre">
         <div><span class="k">Vignette ANM</span><span class="v">${esc(c.vignette || '—')}</span></div>
         <div><span class="k">N° de série</span><span class="v">${esc(c.serie || '—')}</span></div>
         <div><span class="k">QR associé</span><span class="v">${c.qr ? '✓ oui' : '✗ aucun'}</span></div>
@@ -807,7 +851,7 @@ routes.reglages = async () => {
       await put('chambres', c);
       toast('Nom mis à jour.');
     };
-    const rebind = el('<button class="btn ghost" style="margin-top:10px">Réassocier le QR (nouvelle vignette)</button>');
+    const rebind = el('<button class="btn ghost bloc-suivant">Réassocier le QR (nouvelle vignette)</button>');
     rebind.onclick = () => ouvrirScanner(async (payload) => {
       c.qr = payload;
       await put('chambres', c);
@@ -818,7 +862,7 @@ routes.reglages = async () => {
     frag.append(card);
   }
 
-  frag.append(el(`<div class="hint" style="margin-top:18px">
+  frag.append(el(`<div class="hint mt-18">
     Le QR est collé sur la vignette de vérification métrologique annuelle :
     il change à chaque re-vérification. Réassocie-le ici, l’historique de la
     chambre est conservé.
@@ -834,27 +878,53 @@ const blobToDataUrl = (blob) => new Promise((res) => {
   r.readAsDataURL(blob);
 });
 
-async function exporterSauvegarde() {
-  toast('Préparation de la sauvegarde…');
+/* Construit le fichier de sauvegarde complet : relevés, factures et photos.
+   Séparé de l'envoi, parce que les deux peuvent échouer pour des raisons
+   différentes. */
+async function construireSauvegarde() {
   const [chambres, sejours, photos, regs] = await Promise.all([
     getAll('chambres'), getAll('sejours'), getAll('photos'), getAll('reglages'),
   ]);
   const photosOut = [];
-  for (const p of photos) photosOut.push({ id: p.id, at: p.at, data: await blobToDataUrl(p.blob) });
+  for (const p of photos) photosOut.push({ id: p.id, at: p.at, data: await blobToDataUrl(photoBlob(p)) });
   const dump = { format: 'epure-compteurs/1', exporteLe: new Date().toISOString(), chambres, sejours, photos: photosOut, reglages: regs };
   const blob = new Blob([JSON.stringify(dump)], { type: 'application/json' });
-  const nom = `epure-sauvegarde-${today()}.json`;
-  const file = new File([blob], nom, { type: 'application/json' });
+  return { blob, nom: `epure-sauvegarde-${today()}.json` };
+}
 
-  if (navigator.canShare?.({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: 'Sauvegarde Epure' }); }
-    catch (e) { if (e.name !== 'AbortError') telecharger(blob, nom); }
-  } else {
-    telecharger(blob, nom);
-  }
+async function marquerSauvegarde() {
   await setReglage('dernierBackup', new Date().toISOString());
   refreshBackupWarning();
   render();
+}
+
+/* Le chemin sûr : un fichier écrit sur l'appareil, sans intermédiaire. */
+async function telechargerSauvegarde() {
+  toast('Préparation de la sauvegarde…');
+  const { blob, nom } = await construireSauvegarde();
+  telecharger(blob, nom);
+  await marquerSauvegarde();
+}
+
+/* Le chemin pratique : la feuille de partage, pour s'envoyer le fichier par
+   WhatsApp ou le déposer sur Drive. Si le navigateur la refuse, on retombe
+   sur le téléchargement plutôt que de laisser la sauvegarde ne pas exister. */
+async function partagerSauvegarde() {
+  toast('Préparation de la sauvegarde…');
+  const { blob, nom } = await construireSauvegarde();
+  const file = new File([blob], nom, { type: 'application/json' });
+  if (!navigator.canShare?.({ files: [file] })) {
+    telecharger(blob, nom);
+    await marquerSauvegarde();
+    return;
+  }
+  try {
+    await navigator.share({ files: [file], title: 'Sauvegarde Epure' });
+  } catch (e) {
+    if (e.name !== 'AbortError') { telecharger(blob, nom); }
+    else { return; }   // annulé par l'utilisateur : rien n'a été sauvegardé
+  }
+  await marquerSauvegarde();
 }
 
 async function importerSauvegarde(file) {
@@ -868,14 +938,13 @@ async function importerSauvegarde(file) {
     for (const s of dump.sejours) await put('sejours', s);
     for (const p of dump.photos) {
       const blob = await (await fetch(p.data)).blob();
-      await put('photos', { id: p.id, at: p.at, blob });
+      await put('photos', { id: p.id, at: p.at, buf: await blob.arrayBuffer(), type: blob.type });
     }
     for (const r of dump.reglages) await put('reglages', r);
     photoUrls.clear();
     await loadReglages();
     toast('Sauvegarde restaurée.');
-    history_.length = 0;
-    go('recap');
+    remplacer('recap');
   } catch (e) {
     toast('Fichier de sauvegarde illisible.');
   }
@@ -993,7 +1062,7 @@ async function main() {
   });
   $('#tab-scan').onclick = scannerPuisOuvrir;
   document.querySelectorAll('[data-go]').forEach((b) => {
-    b.onclick = () => { history_.length = 0; go(b.dataset.go); };
+    b.onclick = () => remplacer(b.dataset.go);
   });
 
   await refreshBackupWarning();

@@ -1,55 +1,91 @@
+/* Epure — système visuel
+   Noir franc, contraste élevé, aplats sans ombre, bouton principal inversé
+   (blanc sur noir, noir sur blanc). La couleur ne sert qu'à signaler un état :
+   vert pour l'occupation, ambre pour l'alerte, rouge pour l'erreur. */
+
 :root {
-  --bg: #0f1216;
-  --surface: #171c22;
-  --surface-2: #1f262e;
-  --line: #2a323c;
-  --text: #e8edf2;
-  --muted: #8b98a6;
-  --accent: #4ea8de;
-  --ok: #4caf7d;
-  --warn: #e0a33a;
-  --danger: #e05c5c;
-  --btn-text: #05202f;
-  --warn-text: #f0c777;
-  --chrome: rgba(15, 18, 22, .92);
-  --radius: 14px;
+  --bg: #000000;
+  --surface: #0d0d0d;
+  --surface-2: #171717;
+  --line: #262626;
+  --line-fort: #3a3a3a;
+  --text: #ffffff;
+  --muted: #9a9a9a;
+
+  --action: #ffffff;        /* fond du bouton principal */
+  --action-text: #000000;   /* texte du bouton principal */
+
+  --vert: #17c964;
+  --ambre: #f5a524;
+  --rouge: #f3515c;
+  --vert-fond: rgba(23, 201, 100, .14);
+  --ambre-fond: rgba(245, 165, 36, .12);
+
+  --chrome: #000000;
+  --radius: 12px;
+  --radius-sm: 8px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ---------- thème clair : le même système, retourné ---------- */
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="sombre"]) {
+    --bg: #ffffff; --surface: #ffffff; --surface-2: #f2f2f2;
+    --line: #e2e2e2; --line-fort: #c9c9c9;
+    --text: #000000; --muted: #6b6b6b;
+    --action: #000000; --action-text: #ffffff;
+    --vert: #0e8f47; --ambre: #9a6400; --rouge: #c8303c;
+    --vert-fond: rgba(14, 143, 71, .10); --ambre-fond: rgba(154, 100, 0, .10);
+    --chrome: #ffffff;
+  }
+}
+
+:root[data-theme="clair"] {
+  --bg: #ffffff; --surface: #ffffff; --surface-2: #f2f2f2;
+  --line: #e2e2e2; --line-fort: #c9c9c9;
+  --text: #000000; --muted: #6b6b6b;
+  --action: #000000; --action-text: #ffffff;
+  --vert: #0e8f47; --ambre: #9a6400; --rouge: #c8303c;
+  --vert-fond: rgba(14, 143, 71, .10); --ambre-fond: rgba(154, 100, 0, .10);
+  --chrome: #ffffff;
+}
+
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-/* `hidden` doit gagner : plusieurs blocs ci-dessous déclarent display:flex,
-   ce qui sinon laisse l'overlay du scanner intercepter tous les clics. */
+/* `hidden` doit gagner : plusieurs blocs déclarent display:flex, ce qui sinon
+   laisse l'overlay du scanner intercepter tous les clics. */
 [hidden] { display: none !important; }
 
 html, body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font: 400 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: contain;
 }
 
 body {
-  padding-top: calc(56px + var(--safe-top));
-  padding-bottom: calc(64px + var(--safe-bottom));
+  padding-top: calc(52px + var(--safe-top));
+  padding-bottom: calc(66px + var(--safe-bottom));
   min-height: 100dvh;
 }
 
-/* ---------- top bar ---------- */
+/* ---------- barre du haut ---------- */
 
 #topbar {
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 40;
-  height: calc(56px + var(--safe-top));
-  padding: var(--safe-top) 8px 0;
+  height: calc(52px + var(--safe-top));
+  padding: var(--safe-top) 6px 0;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   background: var(--chrome);
-  backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
 }
 
@@ -58,32 +94,34 @@ body {
   margin: 0;
   font-size: 17px;
   font-weight: 600;
+  letter-spacing: -0.02em;
   text-align: center;
-  letter-spacing: .01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .icon-btn {
+  flex: none;
   width: 40px; height: 40px;
   border: 0;
   background: transparent;
   color: var(--text);
-  font-size: 22px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
 }
 .icon-btn:active { background: var(--surface-2); }
-#btn-back { font-size: 30px; line-height: 1; }
-#btn-theme { font-size: 19px; }
+.icon-btn svg { width: 22px; height: 22px; display: block; }
+#btn-back svg { width: 24px; height: 24px; }
 
 /* Deux boutons à droite, zéro ou un à gauche : on compense pour que le titre
    reste optiquement centré dans les deux cas. */
 #btn-back:not([hidden]) + #title { margin-left: 40px; }
 #btn-back[hidden] + #title { margin-left: 80px; }
 
-/* ---------- tab bar ---------- */
+/* ---------- barre du bas ---------- */
 
 #tabbar {
   position: fixed;
@@ -93,7 +131,6 @@ body {
   grid-template-columns: repeat(3, 1fr);
   padding-bottom: var(--safe-bottom);
   background: var(--chrome);
-  backdrop-filter: blur(12px);
   border-top: 1px solid var(--line);
 }
 
@@ -101,108 +138,157 @@ body {
   border: 0;
   background: transparent;
   color: var(--muted);
+  font: inherit;
   font-size: 11px;
-  padding: 8px 0 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+  padding: 9px 0 11px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   cursor: pointer;
 }
-.tab span { font-size: 19px; line-height: 1; }
-.tab.active { color: var(--accent); }
+.tab svg { width: 22px; height: 22px; display: block; }
+.tab.active { color: var(--text); }
 
-/* ---------- layout ---------- */
+/* ---------- mise en page ---------- */
 
-main { padding: 14px 14px 24px; max-width: 560px; margin: 0 auto; }
-.stack > * + * { margin-top: 12px; }
-h2 { font-size: 15px; font-weight: 600; margin: 22px 0 10px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
-h2:first-child { margin-top: 4px; }
+main { padding: 16px 16px 28px; max-width: 560px; margin: 0 auto; }
+.stack > * + * { margin-top: 10px; }
+
+h2 {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 26px 0 10px;
+  color: var(--muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+h2:first-child { margin-top: 6px; }
 
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 14px;
+  padding: 16px;
 }
-button.card { width: 100%; text-align: left; color: inherit; font: inherit; cursor: pointer; display: block; }
+button.card { width: 100%; text-align: left; color: inherit; font: inherit; letter-spacing: inherit; cursor: pointer; display: block; }
 button.card:active { background: var(--surface-2); }
 
-/* ---------- room cards ---------- */
+/* ---------- cartes chambre ---------- */
 
-.room-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.room-name { font-size: 17px; font-weight: 600; }
+.room-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.room-name { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
+
 .pill {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 6px;
   font-size: 11px; font-weight: 600; letter-spacing: .04em;
-  padding: 3px 9px; border-radius: 999px; text-transform: uppercase;
+  padding: 5px 10px; border-radius: 999px; text-transform: uppercase;
 }
-.pill.libre { background: rgba(139,152,166,.16); color: var(--muted); }
-.pill.occupee { background: rgba(78,168,222,.16); color: var(--accent); }
+.pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.libre { background: var(--surface-2); color: var(--muted); }
+.pill.occupee { background: var(--vert-fond); color: var(--vert); }
 
-.room-meta { margin-top: 8px; font-size: 13px; color: var(--muted); }
-.room-stats { margin-top: 12px; display: flex; gap: 18px; }
-.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-.stat-value { font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.room-meta { margin-top: 10px; font-size: 13px; color: var(--muted); }
+.room-stats { margin-top: 14px; display: flex; gap: 22px; }
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 500; }
+.stat-value {
+  font-size: 24px; font-weight: 600; letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums; margin-top: 3px;
+}
+.stat-value small { font-size: 13px; font-weight: 400; color: var(--muted); letter-spacing: 0; }
 
-/* ---------- forms ---------- */
+/* ---------- formulaires ---------- */
 
-label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 7px; }
 
 input, select, textarea {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   color: var(--text);
   font: inherit;
-  padding: 12px;
+  letter-spacing: inherit;
+  padding: 13px 14px;
 }
-input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+
+/* iOS Safari donne aux champs date une largeur intrinsèque dictée par leur
+   contenu localisé (09/19/2026 en US est plus large que 19/09/2026), ce qui
+   les fait déborder de leur conteneur. On neutralise l'apparence native et on
+   impose une hauteur, qu'iOS ne calcule plus une fois l'appearance retirée. */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 48px;
+  line-height: 20px;
+  text-align: left;
+}
+input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
+input[type="date"]::-webkit-datetime-edit { padding: 0; }
+input[type="date"]::-webkit-calendar-picker-indicator { margin-left: auto; opacity: .55; }
+input[type="checkbox"] { width: auto; min-width: 0; display: inline-block; accent-color: var(--text); }
 
 input.index-input {
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: center;
-  letter-spacing: .06em;
-  padding: 14px 12px;
+  letter-spacing: .02em;
+  padding: 16px 12px;
 }
 
-.field + .field { margin-top: 14px; }
-.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
-.hint.warn { color: var(--warn); }
-.hint.danger { color: var(--danger); }
+.field + .field { margin-top: 16px; }
+.hint { font-size: 12px; line-height: 1.45; color: var(--muted); margin-top: 7px; }
+.hint.warn { color: var(--ambre); }
+.hint.danger { color: var(--rouge); }
 
 .btn {
+  display: block;
   width: 100%;
-  padding: 14px;
+  padding: 16px;
   border: 0;
-  border-radius: 12px;
-  background: var(--accent);
-  color: var(--btn-text);
+  border-radius: var(--radius-sm);
+  background: var(--action);
+  color: var(--action-text);
   font: inherit;
+  font-size: 16px;
   font-weight: 600;
+  letter-spacing: -0.01em;
+  text-align: center;
   cursor: pointer;
 }
-.btn:active { filter: brightness(.9); }
-.btn:disabled { opacity: .4; cursor: default; }
-.btn.ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
-.btn.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+.btn:active { opacity: .82; }
+.btn:disabled { opacity: .35; cursor: default; }
+.btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line-fort); }
+.btn.ghost:active { background: var(--surface-2); opacity: 1; }
+.btn.danger { background: transparent; color: var(--rouge); border: 1px solid var(--rouge); }
 .btn + .btn { margin-top: 10px; }
 
-.link { background: none; border: 0; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; padding: 0; }
+.link { background: none; border: 0; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; padding: 0; }
 
 .row { display: flex; gap: 10px; }
-.row > * { flex: 1; }
+.row > * { flex: 1; min-width: 0; }
 
-/* ---------- photo capture ---------- */
+/* ---------- photo ---------- */
 
 .photo-slot {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
-  border-radius: 12px;
-  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--line-fort);
   background: var(--surface-2);
   display: flex;
   align-items: center;
@@ -210,59 +296,69 @@ input.index-input {
   overflow: hidden;
   color: var(--muted);
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
 }
 .photo-slot img { width: 100%; height: 100%; object-fit: cover; }
-.photo-slot input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.photo-slot .retake {
-  position: absolute; right: 8px; bottom: 8px;
-  background: rgba(0,0,0,.65); color: #fff;
-  border: 0; border-radius: 8px; padding: 6px 10px; font-size: 12px;
+.photo-slot input[type=file] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+/* Case à cocher sur une ligne, libellé aligné au centre. */
+.case {
+  display: flex; gap: 10px; align-items: center;
+  font-size: 13px; font-weight: 400; color: var(--muted);
+  margin: 0; padding: 2px 2px;
 }
+.case input[type="checkbox"] { width: 18px; height: 18px; flex: none; }
 
-/* ---------- summary lines ---------- */
+.ph-placeholder { display: flex; align-items: center; gap: 8px; }
 
-.lines { font-size: 14px; }
-.lines div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; }
+/* ---------- lignes de synthèse ---------- */
+
+.lines { font-size: 15px; }
+.lines div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; }
 .lines div + div { border-top: 1px solid var(--line); }
 .lines .k { color: var(--muted); }
 .lines .v { font-variant-numeric: tabular-nums; font-weight: 500; text-align: right; }
-.lines .total { padding-top: 10px; font-size: 17px; font-weight: 700; }
-.lines .total .v { color: var(--accent); }
+.lines .total { padding-top: 14px; font-size: 15px; }
+.lines .total .k { color: var(--text); font-weight: 600; }
+.lines .total .v { font-size: 22px; font-weight: 600; letter-spacing: -0.03em; }
 
-/* ---------- banner / empty / toast ---------- */
+/* ---------- bandeau, vide, toast ---------- */
 
 .banner {
   position: fixed;
-  top: calc(56px + var(--safe-top));
+  top: calc(52px + var(--safe-top));
   left: 0; right: 0;
   z-index: 35;
-  background: rgba(224,163,58,.14);
-  border-bottom: 1px solid rgba(224,163,58,.35);
-  color: var(--warn-text);
+  background: var(--ambre-fond);
+  border-bottom: 1px solid var(--line);
+  color: var(--ambre);
   font-size: 13px;
-  padding: 9px 14px;
+  font-weight: 500;
+  padding: 10px 16px;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-body.has-banner main { padding-top: 44px; }
+body.has-banner main { padding-top: 46px; }
 
-.empty { text-align: center; color: var(--muted); font-size: 14px; padding: 40px 20px; }
+.empty { text-align: center; color: var(--muted); font-size: 14px; padding: 48px 20px; }
 
 #toast {
   position: fixed;
-  left: 50%; transform: translateX(-50%);
-  bottom: calc(80px + var(--safe-bottom));
+  left: 16px; right: 16px;
+  bottom: calc(82px + var(--safe-bottom));
   z-index: 60;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 11px 16px;
+  margin: 0 auto;
+  max-width: 420px;
+  background: var(--text);
+  color: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
   font-size: 14px;
-  max-width: 88vw;
-  box-shadow: 0 8px 30px rgba(0,0,0,.5);
+  font-weight: 500;
+  text-align: center;
 }
 
-/* ---------- scanner overlay ---------- */
+/* ---------- scanner ---------- */
 
 .overlay {
   position: fixed; inset: 0; z-index: 70;
@@ -272,48 +368,46 @@ body.has-banner main { padding-top: 44px; }
 #scan-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .scan-frame {
   position: relative;
-  width: 68vw; max-width: 300px; aspect-ratio: 1;
-  border: 3px solid rgba(255,255,255,.9);
-  border-radius: 18px;
-  box-shadow: 0 0 0 100vmax rgba(0,0,0,.5);
+  width: 70vw; max-width: 300px; aspect-ratio: 1;
+  border: 2px solid #fff;
+  border-radius: var(--radius);
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .58);
 }
 #scan-hint {
   position: relative;
-  margin: 22px 24px 0;
-  color: #fff; font-size: 14px; text-align: center;
+  margin: 24px 28px 0;
+  color: #fff; font-size: 15px; font-weight: 500; text-align: center;
 }
 #scan-close {
   position: absolute;
   bottom: calc(28px + var(--safe-bottom));
-  left: 24px; right: 24px;
+  left: 16px; right: 16px;
   width: auto;
+  background: #fff; color: #000; border: 0;
 }
 
-/* ---------- invoice preview ---------- */
+/* ---------- facture ---------- */
 
-#facture-img { width: 100%; border-radius: 12px; border: 1px solid var(--line); display: block; background: #fff; }
+#facture-img {
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  display: block;
+  background: #fff;
+}
 
 /* ---------- archives ---------- */
 
-.arch-item { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
-.arch-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
-.arch-amount { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.arch-item { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+.arch-item .room-name { font-size: 15px; }
+.arch-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.arch-amount { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 16px; letter-spacing: -0.02em; white-space: nowrap; }
 
-/* ---------- thème clair ----------
-   Deux portes d'entrée, mêmes valeurs. Le média suit le système tant qu'aucun
-   choix explicite n'a été fait (et s'efface dès que « sombre » est imposé) ;
-   l'attribut applique le choix manuel du bouton de la barre du haut. */
-
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="sombre"]) {
-    --bg: #f4f6f8; --surface: #fff; --surface-2: #eef1f4; --line: #dde3e9;
-    --text: #131920; --muted: #6a7885; --accent: #1b6fa8;
-    --btn-text: #fff; --warn-text: #8a5d00; --chrome: rgba(244, 246, 248, .92);
-  }
-}
-
-:root[data-theme="clair"] {
-  --bg: #f4f6f8; --surface: #fff; --surface-2: #eef1f4; --line: #dde3e9;
-  --text: #131920; --muted: #6a7885; --accent: #1b6fa8;
-  --btn-text: #fff; --warn-text: #8a5d00; --chrome: rgba(244, 246, 248, .92);
-}
+/* Écarts ponctuels, pour éviter les styles en ligne dans le JS. */
+.lines.serre { margin-top: 12px; }
+.centre { text-align: center; }
+.bloc-suivant { margin-top: 10px; }
+.mt-18 { margin-top: 18px; }
+.mb-12 { margin: 0 0 12px; }
+a.btn { text-decoration: none; }
+label.btn { display: block; }

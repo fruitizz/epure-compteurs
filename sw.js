@@ -1,7 +1,7 @@
 /* Service worker — cache de la coquille de l'app.
    Les données (relevés, photos) vivent dans IndexedDB, jamais ici. */
 
-const CACHE = 'epure-v2';
+const CACHE = 'epure-v3';
 const ASSETS = [
   './',
   './index.html',

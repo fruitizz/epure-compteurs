@@ -17,7 +17,7 @@ const SEED_CHAMBRES = [
 ];
 
 const DEFAULTS = {
-  entete: 'Epure',
+  entete: 'Résidence Epure',
   sousTitre: '',
   devise: 'FCFA',
   prixKwhDefaut: 0,
@@ -198,7 +198,7 @@ async function render() {
 /* ============================ Écran : Récap ============================ */
 
 routes.recap = async () => {
-  $('#title').textContent = reglages.entete || 'Epure';
+  $('#title').textContent = reglages.entete || 'Résidence Epure';
   const [chambres, sejours] = await Promise.all([getAll('chambres'), getAll('sejours')]);
   const frag = el('<div class="stack"></div>');
 
@@ -524,7 +524,7 @@ async function dessinerFacture(sejour, chambre) {
 
   g.fillStyle = ink;
   g.font = '600 46px -apple-system, "Segoe UI", Roboto, sans-serif';
-  g.fillText(reglages.entete || 'Epure', M, y);
+  g.fillText(reglages.entete || 'Résidence Epure', M, y);
   if (reglages.sousTitre) {
     y += 34;
     g.fillStyle = grey; g.font = '26px -apple-system, sans-serif';
@@ -741,7 +741,7 @@ routes.reglages = async () => {
   </div>`);
   const bFact = el('<button class="btn ghost">Enregistrer</button>');
   bFact.onclick = async () => {
-    await setReglage('entete', $('#r-entete', fact).value.trim() || 'Epure');
+    await setReglage('entete', $('#r-entete', fact).value.trim() || 'Résidence Epure');
     await setReglage('sousTitre', $('#r-sous', fact).value.trim());
     await setReglage('devise', $('#r-devise', fact).value.trim() || 'FCFA');
     await setReglage('prixKwhDefaut', parseFloat(String($('#r-prix', fact).value).replace(',', '.')) || 0);

@@ -10,10 +10,10 @@ const DB_VERSION = 1;
    opaque mais unique et stable jusqu'à la prochaine vérification annuelle,
    après quoi il se réassocie depuis Réglages. */
 const SEED_CHAMBRES = [
-  { nom: 'Chambre 1', qr: '57Yt4SzYCP4+TZ8qT11M3fjoSMnGPHb8iBxdRZ1gyyTj++ATuoIwOz8/PvYWM+5o', vignette: '00275832', serie: '258575', indexInitial: 363.2 },
-  { nom: 'Chambre 2', qr: '57Yt4SzYCP4+TZ8qT11M3W+b+1NV+gtbiQ1fYTHIFmHsalur/t4BiyGod9RuZ+LT', vignette: '00386773', serie: '257372', indexInitial: 241.3 },
-  { nom: 'Chambre 3', qr: '57Yt4SzYCP4+TZ8qT11M3SfN5+mPfbR2GTCAhjBu00/KUmOk1JRjYcXy2RqP0UqJ', vignette: '00275807', serie: '282133', indexInitial: 538.7 },
-  { nom: 'Chambre 4', qr: '57Yt4SzYCP4+TZ8qT11M3Zh9I/CYzAyT92H9tPiiKpC1YRsbwtNTNA4xia0NkD93', vignette: '00273854', serie: '258816', indexInitial: 517.3 },
+  { nom: 'Néfertiti', qr: '57Yt4SzYCP4+TZ8qT11M3fjoSMnGPHb8iBxdRZ1gyyTj++ATuoIwOz8/PvYWM+5o', vignette: '00275832', serie: '258575', indexInitial: 363.2 },
+  { nom: 'Ramsès', qr: '57Yt4SzYCP4+TZ8qT11M3W+b+1NV+gtbiQ1fYTHIFmHsalur/t4BiyGod9RuZ+LT', vignette: '00386773', serie: '257372', indexInitial: 241.3 },
+  { nom: 'Cléopâtre', qr: '57Yt4SzYCP4+TZ8qT11M3SfN5+mPfbR2GTCAhjBu00/KUmOk1JRjYcXy2RqP0UqJ', vignette: '00275807', serie: '282133', indexInitial: 538.7 },
+  { nom: 'Khéops', qr: '57Yt4SzYCP4+TZ8qT11M3Zh9I/CYzAyT92H9tPiiKpC1YRsbwtNTNA4xia0NkD93', vignette: '00273854', serie: '258816', indexInitial: 517.3 },
 ];
 
 const DEFAULTS = {
@@ -1040,6 +1040,21 @@ async function scannerPuisOuvrir() {
 
 /* ============================ Démarrage ============================ */
 
+/* Reprise unique du nommage royal. Les installations antérieures portent
+   encore « Chambre 1 »… en base : le changement de valeur par défaut ne les
+   atteint pas. On les renomme en s'appuyant sur le QR — puis sur la vignette
+   si le QR a été réassocié — et jamais sur un nom saisi à la main. */
+async function migrerNomsRoyaux() {
+  for (const c of await getAll('chambres')) {
+    if (!/^Chambre\s+\d+$/.test(c.nom || '')) continue;
+    const seed = SEED_CHAMBRES.find((x) => x.qr === c.qr)
+      || SEED_CHAMBRES.find((x) => x.vignette === c.vignette);
+    if (!seed) continue;
+    c.nom = seed.nom;
+    await put('chambres', c);
+  }
+}
+
 async function seedSiVide() {
   const chambres = await getAll('chambres');
   if (chambres.length) return;
@@ -1049,6 +1064,7 @@ async function seedSiVide() {
 async function main() {
   db = await openDb();
   await seedSiVide();
+  await migrerNomsRoyaux();
   await loadReglages();
 
   $('#btn-back').onclick = back;

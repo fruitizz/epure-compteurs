@@ -12,12 +12,24 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="styles.css">
+<script>
+/* Applique le thème choisi AVANT le premier rendu. localStorage est
+   synchrone, contrairement à IndexedDB : c'est ce qui évite l'éclair de
+   couleur au démarrage quand le réglage contredit celui du système. */
+(function () {
+  try {
+    var t = localStorage.getItem('epure-theme');
+    if (t === 'clair' || t === 'sombre') document.documentElement.dataset.theme = t;
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 
 <header id="topbar">
   <button id="btn-back" class="icon-btn" hidden aria-label="Retour">‹</button>
   <h1 id="title">Epure</h1>
+  <button id="btn-theme" class="icon-btn" aria-label="Thème">◐</button>
   <button id="btn-settings" class="icon-btn" aria-label="Réglages">⚙</button>
 </header>
 

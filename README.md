@@ -42,6 +42,7 @@ python3 -m http.server 8777
 | Enregistrer une arrivée | chambre libre → *Enregistrer une arrivée* |
 | Enregistrer un départ et facturer | chambre occupée → *Enregistrer le départ* |
 | Retrouver une facture passée | onglet **Archives** |
+| Changer le thème | bouton **◐ / ☀ / ☾** en haut à droite — automatique, clair, sombre |
 | Renommer les chambres, prix du kWh, en-tête | ⚙ **Réglages** |
 | **Sauvegarder** | ⚙ Réglages → *Sauvegarder maintenant* |
 

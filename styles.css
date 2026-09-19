@@ -9,6 +9,9 @@
   --ok: #4caf7d;
   --warn: #e0a33a;
   --danger: #e05c5c;
+  --btn-text: #05202f;
+  --warn-text: #f0c777;
+  --chrome: rgba(15, 18, 22, .92);
   --radius: 14px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -45,7 +48,7 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(15, 18, 22, .92);
+  background: var(--chrome);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
 }
@@ -57,6 +60,9 @@ body {
   font-weight: 600;
   text-align: center;
   letter-spacing: .01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .icon-btn {
@@ -70,7 +76,12 @@ body {
 }
 .icon-btn:active { background: var(--surface-2); }
 #btn-back { font-size: 30px; line-height: 1; }
-#btn-back[hidden] + #title { margin-left: 40px; }
+#btn-theme { font-size: 19px; }
+
+/* Deux boutons à droite, zéro ou un à gauche : on compense pour que le titre
+   reste optiquement centré dans les deux cas. */
+#btn-back:not([hidden]) + #title { margin-left: 40px; }
+#btn-back[hidden] + #title { margin-left: 80px; }
 
 /* ---------- tab bar ---------- */
 
@@ -81,7 +92,7 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   padding-bottom: var(--safe-bottom);
-  background: rgba(15, 18, 22, .92);
+  background: var(--chrome);
   backdrop-filter: blur(12px);
   border-top: 1px solid var(--line);
 }
@@ -168,7 +179,7 @@ input.index-input {
   border: 0;
   border-radius: 12px;
   background: var(--accent);
-  color: #05202f;
+  color: var(--btn-text);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -228,7 +239,7 @@ input.index-input {
   z-index: 35;
   background: rgba(224,163,58,.14);
   border-bottom: 1px solid rgba(224,163,58,.35);
-  color: #f0c777;
+  color: var(--warn-text);
   font-size: 13px;
   padding: 9px 14px;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -288,11 +299,21 @@ body.has-banner main { padding-top: 44px; }
 .arch-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
 .arch-amount { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
 
+/* ---------- thème clair ----------
+   Deux portes d'entrée, mêmes valeurs. Le média suit le système tant qu'aucun
+   choix explicite n'a été fait (et s'efface dès que « sombre » est imposé) ;
+   l'attribut applique le choix manuel du bouton de la barre du haut. */
+
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="sombre"]) {
     --bg: #f4f6f8; --surface: #fff; --surface-2: #eef1f4; --line: #dde3e9;
     --text: #131920; --muted: #6a7885; --accent: #1b6fa8;
+    --btn-text: #fff; --warn-text: #8a5d00; --chrome: rgba(244, 246, 248, .92);
   }
-  #topbar, #tabbar { background: rgba(244,246,248,.92); }
-  .btn { color: #fff; }
+}
+
+:root[data-theme="clair"] {
+  --bg: #f4f6f8; --surface: #fff; --surface-2: #eef1f4; --line: #dde3e9;
+  --text: #131920; --muted: #6a7885; --accent: #1b6fa8;
+  --btn-text: #fff; --warn-text: #8a5d00; --chrome: rgba(244, 246, 248, .92);
 }

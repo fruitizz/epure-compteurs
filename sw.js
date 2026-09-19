@@ -1,7 +1,7 @@
 /* Service worker — cache de la coquille de l'app.
    Les données (relevés, photos) vivent dans IndexedDB, jamais ici. */
 
-const CACHE = 'epure-v1';
+const CACHE = 'epure-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -45,13 +45,20 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
+  /* Stale-while-revalidate : on sert le cache tout de suite (démarrage
+     instantané, et ça marche hors ligne), et on rafraîchit en arrière-plan.
+     Surtout pas du cache-first pur — app.js et styles.css y resteraient figés
+     pour toujours, et aucune correction ne parviendrait aux téléphones. */
   e.respondWith(
-    caches.match(request).then((hit) => hit || fetch(request).then((res) => {
-      if (res.ok && new URL(request.url).origin === self.location.origin) {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(request, copy));
-      }
-      return res;
-    }))
+    caches.match(request).then((hit) => {
+      const reseau = fetch(request).then((res) => {
+        if (res.ok && new URL(request.url).origin === self.location.origin) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(request, copy));
+        }
+        return res;
+      }).catch(() => hit);
+      return hit || reseau;
+    })
   );
 });

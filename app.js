@@ -84,6 +84,47 @@ async function setReglage(k, v) {
   await put('reglages', { k, v });
 }
 
+/* ============================ Thème ============================ */
+
+/* Trois états, dans cet ordre : suit le téléphone, puis clair forcé, puis
+   sombre forcé. Le choix vit dans localStorage et non dans IndexedDB : c'est
+   une préférence d'affichage propre à l'appareil, pas une donnée comptable —
+   elle n'a donc rien à faire dans la sauvegarde. */
+const THEMES = [
+  { cle: 'auto', icone: '◐', libelle: 'Thème : automatique (suit le téléphone)' },
+  { cle: 'clair', icone: '☀', libelle: 'Thème : clair' },
+  { cle: 'sombre', icone: '☾', libelle: 'Thème : sombre' },
+];
+
+const lireTheme = () => {
+  try { return localStorage.getItem('epure-theme') || 'auto'; } catch { return 'auto'; }
+};
+
+function appliquerTheme(cle) {
+  const t = THEMES.find((x) => x.cle === cle) || THEMES[0];
+  if (t.cle === 'auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = t.cle;
+  try { localStorage.setItem('epure-theme', t.cle); } catch {}
+
+  const btn = document.querySelector('#btn-theme');
+  if (btn) { btn.textContent = t.icone; btn.setAttribute('aria-label', t.libelle); btn.title = t.libelle; }
+
+  /* La barre d'état du téléphone doit suivre, sinon elle jure avec l'app. */
+  const meta = document.querySelector('meta[name=theme-color]');
+  if (meta) {
+    const clair = t.cle === 'clair'
+      || (t.cle === 'auto' && window.matchMedia('(prefers-color-scheme: light)').matches);
+    meta.setAttribute('content', clair ? '#f4f6f8' : '#111418');
+  }
+  return t;
+}
+
+function themeSuivant() {
+  const i = THEMES.findIndex((x) => x.cle === lireTheme());
+  const t = appliquerTheme(THEMES[(i + 1) % THEMES.length].cle);
+  toast(t.libelle);
+}
+
 /* ============================ Helpers ============================ */
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -942,7 +983,14 @@ async function main() {
   await loadReglages();
 
   $('#btn-back').onclick = back;
+  $('#btn-theme').onclick = themeSuivant;
   $('#btn-settings').onclick = () => go('reglages');
+
+  appliquerTheme(lireTheme());
+  /* En mode automatique, suivre le téléphone s'il bascule pendant l'usage. */
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+    if (lireTheme() === 'auto') appliquerTheme('auto');
+  });
   $('#tab-scan').onclick = scannerPuisOuvrir;
   document.querySelectorAll('[data-go]').forEach((b) => {
     b.onclick = () => { history_.length = 0; go(b.dataset.go); };

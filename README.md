@@ -7,18 +7,17 @@ partageable par WhatsApp ou enregistrable en photo.
 **Aucun serveur, aucun compte, aucune synchronisation.** Les données vivent
 dans IndexedDB sur le téléphone qui a installé l'app.
 
-## Mise en ligne
+## En ligne
 
-Ce sont des fichiers statiques : il n'y a rien à compiler.
+**<https://fruitizz.github.io/epure-compteurs/>**
 
-1. **Netlify Drop** — glisser le dossier sur <https://app.netlify.com/drop>.
-   Une URL HTTPS en quinze secondes. C'est la voie la plus rapide.
-2. **GitHub Pages** — pousser le dépôt, activer Pages sur la branche `main`.
-3. **Un hébergement existant** — déposer les fichiers dans un sous-dossier.
+Servie par GitHub Pages depuis la branche `main`. Tout `git push` sur `main`
+redéploie l'app en une à deux minutes ; le service worker récupère la nouvelle
+version au démarrage suivant, dès qu'il y a du réseau.
 
-**HTTPS est obligatoire** : sans lui, ni la caméra (scan des QR) ni
-l'installation sur l'écran d'accueil ne fonctionnent. `localhost` fait
-exception pour les essais.
+Ce sont des fichiers statiques : il n'y a rien à compiler. **HTTPS est
+obligatoire** — sans lui, ni la caméra (scan des QR) ni l'installation sur
+l'écran d'accueil ne fonctionnent. `localhost` fait exception pour les essais.
 
 ## Installation sur les téléphones
 

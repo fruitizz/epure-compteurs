@@ -10,10 +10,10 @@ const DB_VERSION = 1;
    opaque mais unique et stable jusqu'à la prochaine vérification annuelle,
    après quoi il se réassocie depuis Réglages. */
 const SEED_CHAMBRES = [
-  { nom: 'Néfertiti', qr: '57Yt4SzYCP4+TZ8qT11M3fjoSMnGPHb8iBxdRZ1gyyTj++ATuoIwOz8/PvYWM+5o', vignette: '00275832', serie: '258575', indexInitial: 363.2 },
-  { nom: 'Ramsès', qr: '57Yt4SzYCP4+TZ8qT11M3W+b+1NV+gtbiQ1fYTHIFmHsalur/t4BiyGod9RuZ+LT', vignette: '00386773', serie: '257372', indexInitial: 241.3 },
-  { nom: 'Cléopâtre', qr: '57Yt4SzYCP4+TZ8qT11M3SfN5+mPfbR2GTCAhjBu00/KUmOk1JRjYcXy2RqP0UqJ', vignette: '00275807', serie: '282133', indexInitial: 538.7 },
-  { nom: 'Khéops', qr: '57Yt4SzYCP4+TZ8qT11M3Zh9I/CYzAyT92H9tPiiKpC1YRsbwtNTNA4xia0NkD93', vignette: '00273854', serie: '258816', indexInitial: 517.3 },
+  { nom: 'Chambre Néfertiti', qr: '57Yt4SzYCP4+TZ8qT11M3fjoSMnGPHb8iBxdRZ1gyyTj++ATuoIwOz8/PvYWM+5o', vignette: '00275832', serie: '258575', indexInitial: 363.2 },
+  { nom: 'Chambre Ramsès', qr: '57Yt4SzYCP4+TZ8qT11M3W+b+1NV+gtbiQ1fYTHIFmHsalur/t4BiyGod9RuZ+LT', vignette: '00386773', serie: '257372', indexInitial: 241.3 },
+  { nom: 'Chambre Cléopâtre', qr: '57Yt4SzYCP4+TZ8qT11M3SfN5+mPfbR2GTCAhjBu00/KUmOk1JRjYcXy2RqP0UqJ', vignette: '00275807', serie: '282133', indexInitial: 538.7 },
+  { nom: 'Chambre Khéops', qr: '57Yt4SzYCP4+TZ8qT11M3Zh9I/CYzAyT92H9tPiiKpC1YRsbwtNTNA4xia0NkD93', vignette: '00273854', serie: '258816', indexInitial: 517.3 },
 ];
 
 const DEFAULTS = {
@@ -436,11 +436,12 @@ const parseIndex = (raw) => {
 
 routes.arrivee = async ({ chambreId }) => {
   const [chambre, sejours] = await Promise.all([get('chambres', chambreId), getAll('sejours')]);
-  $('#title').textContent = `${chambre.nom} — arrivée`;
+  $('#title').textContent = 'Arrivée';
   const precedent = dernierIndex(chambre, sejours);
 
   const frag = el('<div class="stack"></div>');
   frag.append(el(`<div class="card"><div class="lines">
+    <div><span class="k">Chambre</span><span class="v">${esc(chambre.nom)}</span></div>
     <div><span class="k">Dernier index relevé</span><span class="v">${kwh(precedent)}</span></div>
   </div></div>`));
 
@@ -499,10 +500,11 @@ routes.arrivee = async ({ chambreId }) => {
 routes.depart = async ({ sejourId }) => {
   const sejour = await get('sejours', sejourId);
   const chambre = await get('chambres', sejour.chambreId);
-  $('#title').textContent = `${chambre.nom} — départ`;
+  $('#title').textContent = 'Départ';
 
   const frag = el('<div class="stack"></div>');
   frag.append(el(`<div class="card"><div class="lines">
+    <div><span class="k">Chambre</span><span class="v">${esc(chambre.nom)}</span></div>
     <div><span class="k">Occupant</span><span class="v">${esc(sejour.occupant)}</span></div>
     <div><span class="k">Entré le</span><span class="v">${fmtDate(sejour.dateEntree)}</span></div>
     <div><span class="k">Index d'entrée</span><span class="v">${kwh(sejour.indexEntree)}</span></div>
@@ -1040,13 +1042,21 @@ async function scannerPuisOuvrir() {
 
 /* ============================ Démarrage ============================ */
 
-/* Reprise unique du nommage royal. Les installations antérieures portent
-   encore « Chambre 1 »… en base : le changement de valeur par défaut ne les
-   atteint pas. On les renomme en s'appuyant sur le QR — puis sur la vignette
-   si le QR a été réassocié — et jamais sur un nom saisi à la main. */
+/* Noms posés automatiquement par une version précédente de l'app : « Chambre 1 »
+   au départ, puis les noms royaux nus avant qu'ils ne prennent le préfixe. On a
+   le droit de les remplacer ; tout autre libellé vient de l'utilisateur. */
+const NOMS_AUTO = ['Néfertiti', 'Ramsès', 'Cléopâtre', 'Khéops'];
+
+const nomAutomatique = (nom) =>
+  /^Chambre\s+\d+$/.test(nom || '') || NOMS_AUTO.includes((nom || '').trim());
+
+/* Reprise du nommage sur les installations déjà en service : le changement de
+   valeur par défaut ne les atteint pas, leur nom est en base. On s'appuie sur
+   le QR — puis sur la vignette si le QR a été réassocié — et jamais sur un nom
+   saisi à la main. Idempotent : une fois préfixé, le nom n'est plus touché. */
 async function migrerNomsRoyaux() {
   for (const c of await getAll('chambres')) {
-    if (!/^Chambre\s+\d+$/.test(c.nom || '')) continue;
+    if (!nomAutomatique(c.nom)) continue;
     const seed = SEED_CHAMBRES.find((x) => x.qr === c.qr)
       || SEED_CHAMBRES.find((x) => x.vignette === c.vignette);
     if (!seed) continue;

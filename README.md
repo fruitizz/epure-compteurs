@@ -102,11 +102,13 @@ QR, leur vignette et leur index au 19/09/2026 :
 
 | Chambre | Vignette ANM | Index initial |
 |---|---|---|
-| Néfertiti | 00275832 | 363,2 kWh |
-| Ramsès | 00386773 | 241,3 kWh |
-| Cléopâtre | 00275807 | 538,7 kWh |
-| Khéops | 00273854 | 517,3 kWh |
+| Chambre Néfertiti | 00275832 | 363,2 kWh |
+| Chambre Ramsès | 00386773 | 241,3 kWh |
+| Chambre Cléopâtre | 00275807 | 538,7 kWh |
+| Chambre Khéops | 00273854 | 517,3 kWh |
 
 `migrerNomsRoyaux()` rattrape les installations antérieures : elle renomme les
-chambres portant encore « Chambre N », en s'appuyant sur le QR puis sur la
-vignette, et ne touche jamais à un nom saisi à la main.
+chambres portant encore un nom posé automatiquement — « Chambre N », ou un nom
+royal sans préfixe — en s'appuyant sur le QR puis sur la vignette. Elle ne
+touche jamais à un nom saisi à la main, et ne repasse pas sur un nom déjà
+préfixé.
